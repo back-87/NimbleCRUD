@@ -11,7 +11,7 @@ public struct NimbleCRUDView: View {
     
     private ObservableObject viewModel = NimbleCRUDViewModel()
     
-    var body: some View {
+    public var body: some View {
         ZStack {
             //2 buttons activated by double tap taking up half the view vertically  on the "bottom" of the ZStack
             // these are used to scroll the columns left or right (assuming there's a column in that direction that's hidden by being offscreen. The double tap attention grabbing hints will animate if there's a column hidden offscreeen on that respective side both when this view appears and after the user scrolls the columns
