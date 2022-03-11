@@ -7,8 +7,12 @@
 
 public class NCTempTestClass {
 
+    public init() {
+        //empty but needs to be public for customers of package
+    }
+    
     public func helloToTheWonderfulWorld() {
-        print(helloToTheWonderfulWorld);
+        print("helloToTheWonderfulWorld");
     }
     
 }
