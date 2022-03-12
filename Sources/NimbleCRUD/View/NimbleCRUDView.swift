@@ -11,6 +11,10 @@ public struct NimbleCRUDView: View {
     
     private ObservableObject viewModel = NimbleCRUDViewModel()
     
+    public init() {
+        
+    } //needed for package consumers
+    
     public var body: some View {
         ZStack {
             //2 buttons activated by double tap taking up half the view vertically  on the "bottom" of the ZStack
