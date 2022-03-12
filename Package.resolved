@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "ScrollViewProxy",
+        "repositoryURL": "https://github.com/back-87/ScrollViewProxy.git",
+        "state": {
+          "branch": null,
+          "revision": "cdc501ee8d071452e10d5dc807475e7b3c93789e",
+          "version": "1.0.5"
+        }
+      },
+      {
+        "package": "Introspect",
+        "repositoryURL": "https://github.com/siteline/SwiftUI-Introspect.git",
+        "state": {
+          "branch": null,
+          "revision": "f2616860a41f9d9932da412a8978fec79c06fe24",
+          "version": "0.1.4"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
