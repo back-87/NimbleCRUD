@@ -619,7 +619,7 @@ struct DoubleTapPathView: View {
           .scaleEffect(x: proxy.size.width  / 512,
                        y: proxy.size.height / 512)
           .frame(width: proxy.size.width, height: proxy.size.height).onAppear {
-              if(DoubleTapPathView.shouldGrabAttentionOnAppear) {
+              if DoubleTapPathView.shouldGrabAttentionOnAppear  {
                   grabbingAttention = true
                   DispatchQueue.main.asyncAfter(deadline: .now() + DoubleTapPathView.attentionGrabAnimationDelayPerStep) {
                       grabbingAttention = false

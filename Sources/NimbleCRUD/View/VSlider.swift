@@ -65,13 +65,13 @@ struct VSlider<V: BinaryFloatingPoint>: View {
                 VStack(spacing: 0) {
                     // Gray section of line
                     Rectangle()
-                        .foregroundColor(Color(.systemGray2))
+                        .foregroundColor(Color(.init(gray: 0.3, alpha: 0.3)))
                         .frame(height: self.getPoint(in: geometry).y)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
 
                     // Blue section of line
                     Rectangle()
-                        .foregroundColor(Color(.systemBlue))
+                        .foregroundColor(Color(.orange))
                         .frame(height: geometry.size.height - self.getPoint(in: geometry).y)
                         .clipShape(RoundedRectangle(cornerRadius: 3))
                 }
@@ -83,6 +83,7 @@ struct VSlider<V: BinaryFloatingPoint>: View {
                     .position(self.getPoint(in: geometry))
                     .foregroundColor(Color.white)
                     .shadow(radius: 2, y: 2)
+                    .opacity(1.0)
 
                 // Catches drag gesture
                 Rectangle()

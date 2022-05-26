@@ -11,59 +11,98 @@ struct GrossScrollControlOverlayView: View {
     
     @Binding var overlayShown : Bool
     let shownBackgroundOpacity = 0.75
+    let minimumMargins = 75.0
     
     @Binding var verticalScrollRatio: Float // 0 being top, 1 being bottomed out
     @Binding var horizontalScrollRatio: Float //0 being fully left (0 column leading aligned) and 1 being scroll max right (highest col trailing aligned)
     
+    @State var isPortrait = false
+    
     var body: some View {
         
-        HStack {
-            Spacer()
-                VStack {
-                    Spacer()
-                            ZStack {
-                                
-                                let horizontalSlider =    Slider(value: Binding(get: {
-                                    horizontalScrollRatio
-                               }, set: { (newVal) in
-                                   horizontalScrollRatio = newVal
-                               }))
-                        //.accentColor(Color(.systemGray2))
-                                
-                                
-                                //vertical
-                                VSlider(value: Binding(get: {
-                                            verticalScrollRatio
-                                       }, set: { (newVal) in
-                                           verticalScrollRatio = newVal
-                                       })).rotationEffect(.degrees(180.0), anchor: .center)
-                                        //need to set frame due to rotation
-                                
-                                
-                                //horizontal
-                                horizontalSlider
-                                    
-                            }.opacity(overlayShown ? 1 : 0)
-                            
-                                            
-                            Button(action: {
-                                verticalScrollRatio = 0.0
-                                horizontalScrollRatio = 0.0
-                            }, label: {
-                                Text("RESET")
-                            }).background(Color.black).opacity(shownBackgroundOpacity)
-                                .foregroundColor(Color.white)
-                    
-                    Spacer()
-                }.opacity(overlayShown ? 1 : 0)
-                    .background(Color.gray).opacity(shownBackgroundOpacity)
-                    .opacity(overlayShown ? 1 : 0)
-                    .padding()
-                
-                Spacer()
+        ZStack {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    overlayShown = false
+                }
+                .opacity(overlayShown ? 1 : 0)
             
+            HStack() {
+                Spacer(minLength: isPortrait ? minimumMargins : minimumMargins * 3)
+                VStack {
+                    Spacer(minLength: isPortrait ? minimumMargins * 2.5 : minimumMargins * 0.5)
+                    
+                    //----------------------------
+                    VStack {
+                        Spacer()
+                        ZStack {
+                             
+                             let horizontalSlider =    Slider(value: Binding(get: {
+                                 horizontalScrollRatio
+                            }, set: { (newVal) in
+                                horizontalScrollRatio = newVal
+                            }))
+                                .accentColor(Color(.orange))
+                                .padding(.leading)
+                                .padding(.trailing)
+                             
+                             
+                             //vertical
+                             VSlider(value: Binding(get: {
+                                         verticalScrollRatio
+                                    }, set: { (newVal) in
+                                        verticalScrollRatio = newVal
+                                    }))
+                                        .rotationEffect(.degrees(180.0), anchor: .center)
+                                        .padding(.top)
+                                     //need to set frame due to rotation
+                             
+                             
+                             //horizontal
+                             horizontalSlider
+                        }
+                        HStack {
+                                Button(action: {
+                                    verticalScrollRatio = 0.0
+                                    horizontalScrollRatio = 0.0
+                                }, label: {
+                                    Image(systemName: "arrow.clockwise")
+                                        .resizable()
+                                        .frame(width: sfSymbolButtonDimension, height: sfSymbolButtonDimension)
+                                        .background(Color.black.opacity(0.0))
+                                        .foregroundColor(Color.white)
+                                })
+                                .padding(.leading)
+                                .padding(.bottom)
+                            
+                                Spacer()
+                            
+                                Button(action: {
+                                    overlayShown = false
+                                }, label: {
+                                    Image(systemName: "xmark.circle")
+                                        .resizable()
+                                        .frame(width: sfSymbolButtonDimension, height: sfSymbolButtonDimension)
+                                        .background(Color.black.opacity(0.0))
+                                        .foregroundColor(Color.white)
+                                })
+                                .padding(.trailing)
+                                .padding(.bottom)
+                                   
+                        }
+                    }.background(Color.black).opacity(overlayShown ? shownBackgroundOpacity : 0)
+                    .opacity(overlayShown ? 1 : 0)
+                    //----------------------------
+                    
+                    Spacer(minLength: isPortrait ? minimumMargins * 2.5 : minimumMargins * 0.5)
+                }
+                Spacer(minLength: isPortrait ? minimumMargins : minimumMargins * 3)
+            }
+        }.onReceive(NotificationCenter.Publisher(center: .default, name: UIDevice.orientationDidChangeNotification)) { _ in
+                guard let scene = UIApplication.shared.windows.first?.windowScene else { return }
+                self.isPortrait = scene.interfaceOrientation.isPortrait
         }
-
     }
 }
 
