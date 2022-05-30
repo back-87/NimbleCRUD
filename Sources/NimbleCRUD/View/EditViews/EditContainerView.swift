@@ -39,6 +39,12 @@ struct EditContainerView: View {
                 }.padding(10)
                   
                 
+                HStack {
+                    Spacer()
+                    Text(viewModel.selectedFieldForEditing?.attributeName ?? "Field name unavailable")
+                    Spacer()
+                }
+                
                 viewModel.getEditDetailViewForFieldBeingEdited()
                 
                 
@@ -81,10 +87,9 @@ struct EditContainerView: View {
                    }
                     .alert(isPresented: $clearDestructiveConfirmPresented) { () -> Alert in
                                 let cancelButton = Alert.Button.default(Text("Cancel")) {
-                                    print("cancel button pressed")
+                                    logger.debug("cancel button pressed, nop")
                                 }
                                 let confirmButton = Alert.Button.cancel(Text("Confirm")) {
-                                    print("confirm button pressed")
                                     do {
                                           try viewModel.clearFieldBeingEdited()
                                             viewModel.closeEdit()
@@ -148,10 +153,10 @@ struct EditContainerView: View {
                    }
                     .alert(isPresented: $deleteDestructiveConfirmPresented) { () -> Alert in
                                 let cancelButton = Alert.Button.default(Text("Cancel")) {
-                                    print("cancel button pressed")
+                                    logger.debug("cancel button pressed, nop")
                                 }
                                 let confirmButton = Alert.Button.cancel(Text("Confirm")) {
-                                    print("confirm button pressed")
+    
                                     do {
                                           try viewModel.deleteFieldBeingEdited()
                                             viewModel.closeEdit()

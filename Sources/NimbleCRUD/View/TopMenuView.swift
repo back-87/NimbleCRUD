@@ -12,62 +12,72 @@ struct TopMenuView: View {
     @ObservedObject var viewModel : ViewModel
     
     var body: some View {
-        HStack {
-            Button(action: {
-                
-                if viewModel.paginationOverlayShown == false  {
-                    viewModel.updateScrollOffsetValuesAction.toggle()
-                }
-                viewModel.paginationOverlayShown.toggle()
-                
-            }) {
-                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .foregroundColor(Color.red)
-            }
-            .padding(.leading)
-            
-            Spacer()
-            
-            Menu {
-                optionsMenuItems
-            } label: {
-                Button(action: {}) {
-                    Image(systemName: "ellipsis.circle")
+    
+            HStack {
+                Button(action: {
+                    
+                    if viewModel.paginationOverlayShown == false  {
+                        viewModel.updateScrollOffsetValuesAction.toggle()
+                    }
+                    viewModel.paginationOverlayShown.toggle()
+                    
+                }) {
+                    Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .foregroundColor(Color.black)
+                        .frame(width: sfSymbolButtonDimension, height: sfSymbolButtonDimension)
+                        .foregroundColor(Color.red)
                 }
-                .padding(.trailing)
+                .padding(.leading)
+                
+                
+                Spacer()
+                
+                Menu {
+                    optionsMenuItems
+                } label: {
+                    Button(action: {}) {
+                        Image(systemName: "ellipsis.circle")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: sfSymbolButtonDimension, height: sfSymbolButtonDimension)
+                            .foregroundColor(Color.black)
+                    }
+                    .padding(.trailing)
+                }
+                
             }
-            .menuStyle(BorderlessButtonMenuStyle())
-            .frame(maxWidth: 100.0)
-            
-        }
     }
     
     var optionsMenuItems: some View {
             Group {
                 Button(action: {
-                    print("Search pressed")
+                    logger.debug("Search pressed")
                 }) {
                     Image(systemName: "magnifyingglass")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 }.buttonStyle(PlainButtonStyle())
                 Button(action: {
-                    print("Sort pressed")
+                    logger.debug("Sort pressed")
                 }) {
                     Image(systemName: "arrow.up.arrow.down")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 }.buttonStyle(PlainButtonStyle())
                 Button(action: {
-                    print("Trash pressed")
-                    //UIApplication.shared.windows.first?.windowScene
+                    viewModel.updateScrollOffsetValuesAction.toggle()
+                                       
+
+                    viewModel.multiDeleteCheckboxesShown.toggle()
+                       withAnimation {
+                           
+                           viewModel.openCloseDeleteBottomPanel()
+                           
+                       }
+                       viewModel.horizontalScrollRatio = 0.00
                     
-                }) {
+                    }) {
                     Image(systemName: "trash")
                         .resizable()
                         .aspectRatio(contentMode: .fit)

@@ -1,6 +1,6 @@
 //
 //  NimbleCRUDModel.swift
-//  
+//
 //
 //  Created by Braden Ackerman on 2022-03-11.
 //
@@ -31,8 +31,6 @@ class Model {
         self.attributeNameForFetchSorting = attributeNameToSortBy
         //self.request = NSFetchRequest(entityName: self.entityName)
         findAndSetEntity(entityName: entityName)
-        
-
     }
     
     public init(persistentContainer : NSPersistentContainer, entityName: String) {
@@ -41,7 +39,6 @@ class Model {
         self.attributeNameForFetchSorting = "objectID"
         //self.request = NSFetchRequest(entityName: self.entityName)
         findAndSetEntity(entityName: entityName)
-
     }
 
     
@@ -65,9 +62,10 @@ class Model {
     private func loadContainer() {
         persistentContainer.loadPersistentStores(completionHandler: { _, error in
           if let error = error as NSError? {
+              logger.error("Failed to load stores: \(error), \(error.userInfo)")
             fatalError("Failed to load stores: \(error), \(error.userInfo)")
           } else {
-              print("Loaded NSPersistentContainer (\(self.persistentContainer.name)) successfully.")
+              logger.info("Loaded NSPersistentContainer (\(self.persistentContainer.name)) successfully.")
           }
         })
         
@@ -78,6 +76,7 @@ class Model {
             if name == entityName {
                 entityDescription = entityRef
                 dataLoaded = true
+                break
             }
         }
         
@@ -85,7 +84,7 @@ class Model {
         do {
             totalRows = try persistentContainer.viewContext.count(for: fetch)
         } catch {
-            print("Failed to determine total number of rows to expect")
+            logger.error("Failed to determine total number of rows to expect")
         }
     }
     
@@ -155,23 +154,31 @@ class Model {
                     let stringField = field as! FieldString
                     confirmedObject.setValue(stringField.value, forKey: stringField.attributeName)
                 case .integer16AttributeType:
-                    print("Place holder int16")
+                    let int16Field = field as! FieldInt16
+                    confirmedObject.setValue(int16Field.value, forKey: int16Field.attributeName)
                 case .integer32AttributeType:
-                    print("Place holder int32")
+                    let int32Field = field as! FieldInt32
+                    confirmedObject.setValue(int32Field.value, forKey: int32Field.attributeName)
                 case .integer64AttributeType:
-                    print("Place holder int64")
+                    let int64Field = field as! FieldInt64
+                    confirmedObject.setValue(int64Field.value, forKey: int64Field.attributeName)
                 case .decimalAttributeType:
-                    print("Place holder decimal")
+                    let decimalField = field as! FieldDecimal
+                    confirmedObject.setValue(decimalField.value, forKey: decimalField.attributeName)
                 case .doubleAttributeType:
-                    print("Place holder double")
+                    let doubleField = field as! FieldDouble
+                    confirmedObject.setValue(doubleField.value, forKey: doubleField.attributeName)
                 case .floatAttributeType:
-                    print("Place holder float")
+                    let floatField = field as! FieldFloat
+                    logger.debug("truncation/precision loss check. Saving float value: \(floatField.value)")
+                    confirmedObject.setValue(floatField.value, forKey: floatField.attributeName)
                 case .booleanAttributeType:
                     print("Place holder boolean")
                 case .dateAttributeType:
                     print("Place holder date")
                 case .binaryDataAttributeType:
-                    print("Place holder binary")
+                    let binaryField = field as! FieldBinary
+                    confirmedObject.setValue(binaryField.value, forKey: binaryField.attributeName)
                 case .UUIDAttributeType:
                     print("Place holder uuid")
                 case .URIAttributeType:
@@ -181,8 +188,10 @@ class Model {
                 case .objectIDAttributeType:
                     print("Place holder object")
                 case .undefinedAttributeType:
+                    logger.error("Tried to open EditContainer with a Field having an .undefined type")
                     fatalError("Tried to open EditContainer with a Field having an .undefined type")
                 default:
+                    logger.error("Tried to open EditContainer with a Field having an unhandled type")
                     fatalError("Tried to open EditContainer with a Field having an unhandled type")
             }
             
@@ -197,6 +206,93 @@ class Model {
         }
 
 
+    }
+    
+    public func deleteRows(_ rows : [URL]) {
+        
+        for (url) in rows {
+            deleteRowRepresentedByManagedObjectIDURL(url: url)
+        }
+
+        batchController = nil
+        findAndSetEntity(entityName: entityName)
+        
+        //saveContextAsync()
+        
+        do {
+            try persistentContainer.viewContext.save()
+        } catch {
+            logger.error("deleteRows failed with an undefined error")
+            fatalError("deleteRows failed with an undefined error")
+        }
+         
+        
+    }
+    
+    public func deleteRowRepresentedByManagedObjectIDURL(url : URL) {
+        
+        guard let managedObjectID = persistentContainer.persistentStoreCoordinator.managedObjectID(forURIRepresentation: url)
+        else {
+            logger.error("encountered ModelErrors.unavailableManagedObject")
+            fatalError("encountered ModelErrors.unavailableManagedObject")
+        }
+        
+       let managedObject = try? persistentContainer.viewContext.existingObject(with:managedObjectID)
+
+        if let confirmedObject = managedObject {
+            persistentContainer.viewContext.delete(confirmedObject)
+        }
+         
+    }
+    
+    public func allManagedObjectURIsForSelectAll() ->  [URL: Bool] {
+
+        
+        guard let entityDesc = entityDescription else {
+            logger.error("No entity description")
+            fatalError("No entity description")
+        }
+        
+        var deletionSelectionStatus = [URL: Bool]()
+        
+        let fetch = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+        fetch.resultType = NSFetchRequestResultType.dictionaryResultType
+        
+        let objectIDExpression = NSExpressionDescription()
+        objectIDExpression.name = "objectID"
+        objectIDExpression.expression = NSExpression.expressionForEvaluatedObject()
+        objectIDExpression.expressionResultType = .objectIDAttributeType
+        
+        var propertiesToFetch: [Any] = [objectIDExpression]
+        propertiesToFetch.append(contentsOf: entityDesc.properties)
+        fetch.propertiesToFetch = propertiesToFetch
+        //sort by objectID here instead of any supplied attribute name so it's closer to a random sample of (maxSamplesToReturn) size
+        fetch.sortDescriptors = [NSSortDescriptor(key: "objectID", ascending: true,
+                                                  selector: #selector(NSString.localizedStandardCompare(_:)))]
+        
+        do {
+            
+            let rawObjectDicts : [Dictionary<String, AnyObject>] = try persistentContainer.viewContext.fetch(fetch) as! [Dictionary<String, AnyObject>]
+            
+            var managedObjectID : NSManagedObjectID?
+          
+            for rawManagedObjectDictionaryRepresentation in rawObjectDicts {
+                
+                if let manObjID = (rawManagedObjectDictionaryRepresentation["objectID"] as! NSManagedObjectID?) {
+                    managedObjectID = manObjID
+                    if let unwrappedURL = managedObjectID?.uriRepresentation() {
+                        deletionSelectionStatus[unwrappedURL] = true
+                    }
+                }
+            }
+        }  catch {
+            print("getSampleDataForEachAttribute: \(error)")
+          }
+        
+        
+        
+        
+        return deletionSelectionStatus
     }
     
     public func clearField(field : Field) throws {
@@ -249,14 +345,14 @@ class Model {
                     let uriField = field as! FieldURI
                     confirmedObject.setValue(URL(fileURLWithPath: "file:///dev/null"), forKey: uriField.attributeName)
                 case .transformableAttributeType:
-                    print(" transformable clear")
-                    fallthrough
+                    logger.error(" transformable clear")
                 case .objectIDAttributeType:
-                    print("object clear")
-                    fallthrough
+                    logger.error("object clear")
                 case .undefinedAttributeType:
+                    logger.error("Tried to open EditContainer with a Field having an .undefined type")
                     fatalError("Tried to open EditContainer with a Field having an .undefined type")
                 default:
+                    logger.error("Tried to open EditContainer with a Field having an unhandled type")
                     fatalError("Tried to open EditContainer with a Field having an unhandled type")
             }
         }
@@ -265,6 +361,7 @@ class Model {
            try persistentContainer.viewContext.save()
             self.batchController = nil //cause batchController to be reinstantiated on next read, so new value(s) are reflected
         } catch {
+            logger.error("clear failed")
             print("clear failed")
             throw ModelErrors.undefinedError
             
@@ -322,8 +419,16 @@ class Model {
     }
     
     private func fieldForAttributeNameValueAndType(_ attributeName: String, value: AnyObject, managedObjectURL: URL, type: NSAttributeType) -> Field {
-
+        
         var result : Field = FieldString(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: "ERR no match in fieldForAttributeNameValueAndType()")
+        
+        /*
+         case .floatAttributeType:
+             result = FieldFloat(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: NSString(string: decimalFormatterMaintainingDecimalDigits(NSNumber(value:value as! Float)).string(from: NSNumber(value:value as! Float))!).floatValue)
+         case .doubleAttributeType:
+             result = FieldDouble(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: NSString(string: decimalFormatterMaintainingDecimalDigits(NSNumber(value:value as! Double)).string(from: NSNumber(value:value as! Double))!).doubleValue)
+         */
+        
         
         if attributeName == "objectID" {
             //deliberately no field
@@ -344,9 +449,9 @@ class Model {
             case .decimalAttributeType:
                 result = FieldDecimal(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: value as! NSDecimalNumber)
             case .floatAttributeType:
-                result = FieldFloat(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: value as! Float)
+                result = FieldFloat(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value:value as! Float)
             case .doubleAttributeType:
-                result = FieldDouble(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: value as! Double)
+                result = FieldDouble(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value:value as! Double)
             case .URIAttributeType:
                 result = FieldURI(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: value as! URL)
             case .UUIDAttributeType:
@@ -356,6 +461,7 @@ class Model {
             case .binaryDataAttributeType:
                 result = FieldBinary(attributeName:attributeName ,managedObjectIDUrl: managedObjectURL, value: value as! Data)
             default:
+                logger.error("Unhandled NSAttributeType in fieldForAttributeNameValueAndType()")
                 fatalError("Unhandled NSAttributeType in fieldForAttributeNameValueAndType()")
             
             }
@@ -391,7 +497,7 @@ class Model {
             do {
                 try self.batchController?.performFetch()
             } catch {
-                print("Failed to performFetch() on the NSFetchedResultsController")
+                logger.error("Failed to performFetch() on the NSFetchedResultsController")
             }
         }
         
@@ -425,7 +531,7 @@ class Model {
                         for (attributeName, type) in allAttributeInfo {
                             
                             if fetchedObject[attributeName] == nil {
-                                print("found a missing attribute in this managed object dictionary named: \(attributeName). Creating a placeholder field for it.")
+                                
                                 switch (type) {
                                     
                                 case .stringAttributeType:
@@ -479,13 +585,13 @@ class Model {
                                     placeholderField.presentInPersistentStore = false
                                     fields.append(placeholderField)
                                 case .undefinedAttributeType:
-                                    let _ = print("Hit unhandled case (undefinedAttributeType) for NSAttributeType in RowView")
+                                    let _ = logger.error("Hit unhandled case (undefinedAttributeType) for NSAttributeType in RowView")
                                 case .transformableAttributeType:
-                                    let _ = print("Hit unhandled case (transformableAttributeType) for NSAttributeType in RowView")
+                                    let _ = logger.error("Hit unhandled case (transformableAttributeType) for NSAttributeType in RowView")
                                 case .objectIDAttributeType:
-                                    let _ = print("Hit unhandled case (objectIDAttributeType) for NSAttributeType in RowView")
+                                    let _ = logger.error("Hit unhandled case (objectIDAttributeType) for NSAttributeType in RowView")
                                 @unknown default:
-                                    let _ = print("Hit unhandled *DEFAULT* case for NSAttributeType in RowView")
+                                    let _ = logger.error("Hit unhandled *DEFAULT* case for NSAttributeType in RowView")
                                 }
                             }
                         }
@@ -568,7 +674,7 @@ class Model {
                 return
         }
         for (attribName, attribDescription) in entityDesc.attributesByName {
-            print("Attribute: \(attribName) Desc: \(attribDescription)")
+            logger.debug("Attribute: \(attribName) Desc: \(attribDescription)")
         }
         
     }

@@ -8,29 +8,68 @@
 import SwiftUI
 import CoreData
 
-protocol  FieldInteractionProtocol {
-    
-    func fieldDoubleTapped(_ field: Field)
-    
-    func fieldLongPressed(_ field: Field)
-}
-
 struct RowView: View {
     
     var rowIndex : Int
     var content : [Field]
-    var visiblityAndInteractionDelegate :  FieldInteractionProtocol?
-    var widthOracle : ColumnWidthProctol
+    @ObservedObject var viewModel : ViewModel
+    
+    @State var checkboxChecked : Bool = false
     
     var body: some View {
-        
 
     HStack{
+        
+        if viewModel.multiDeleteCheckboxesShown {
+            Button(action: {
+                checkboxChecked.toggle()
+                
+                if let strongFirst = content.first {
+                    if checkboxChecked {
+                        viewModel.selectFieldForDelete(strongFirst)
+                    } else {
+                        viewModel.deSelectFieldForDelete(strongFirst)
+                    }
+                }
+
+            }) {
+                
+                if checkboxChecked {
+                    Image(systemName: "checkmark.square")
+                        .resizable()
+                        .foregroundColor(Color.black)
+                        .frame(width: cellHeight/4, height: cellHeight/4)
+                        .padding(.leading)
+                        .padding(.trailing)
+                } else {
+                    Image(systemName: "square")
+                        .resizable()
+                        .foregroundColor(Color.black)
+                        .frame(width: cellHeight/4, height: cellHeight/4)
+                        .padding(.leading)
+                        .padding(.trailing)
+                }
+           
+            }
+            .buttonStyle(BorderlessButtonStyle())
+            //.transition(.move(edge: .leading))
+            .onAppear {
+                //update checkboxChecked with ViewModel/Model
+                if let strongFirst = content.first {
+                    checkboxChecked = viewModel.isFieldSelectedForDelete(strongFirst)
+                }
+            }
+ 
+            Divider().background(Color.black)
+        } else {
+            Divider().background(Color.black)
+        }
+        
+            
         
             ForEach(content.indices, id:\.self) { colIndex in
                 
                 let field = content[colIndex]
-                let newScrollID = RowColScrollID(row:rowIndex, col:colIndex)
                 
                 ZStack{
                     Color.clear
@@ -38,14 +77,10 @@ struct RowView: View {
                             .contentShape(Rectangle())
                             .gesture(  TapGesture(count: 2)
                                 .onEnded {
-                                    if let unwrappedVisAndInteractionDel = visiblityAndInteractionDelegate {
-                                        unwrappedVisAndInteractionDel.fieldDoubleTapped(field)
-                                    }
+                                    viewModel.fieldDoubleTapped(field)
                                 } )
-                            .onLongPressGesture(minimumDuration: 0.1, maximumDistance: CGFloat(max(widthOracle.getColumnWidthForAttributeName(field.attributeName), cellHeight)), perform: {
-                                if let unwrappedVisAndInteractionDel = visiblityAndInteractionDelegate {
-                                    unwrappedVisAndInteractionDel.fieldLongPressed(field)
-                                }
+                            .onLongPressGesture(minimumDuration: 0.1, maximumDistance: CGFloat(max(viewModel.getColumnWidthForAttributeName(field.attributeName), cellHeight)), perform: {
+                                    viewModel.fieldLongPressed(field)
                             })
                     
                     switch (field.type) {
@@ -53,11 +88,11 @@ struct RowView: View {
                         case .stringAttributeType:
                             
                             let stringField : FieldString = field as! FieldString
-                            
+
+                        
                             Text(stringField.presentInPersistentStore ? stringField.value : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -66,8 +101,7 @@ struct RowView: View {
                             
                             Text(intField.presentInPersistentStore ? intField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -77,8 +111,7 @@ struct RowView: View {
                             
                             Text(intField.presentInPersistentStore ? intField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -88,8 +121,7 @@ struct RowView: View {
                             
                             Text(intField.presentInPersistentStore ? intField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -99,8 +131,7 @@ struct RowView: View {
                             
                             Text(uriField.presentInPersistentStore ? uriField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -110,8 +141,7 @@ struct RowView: View {
                             
                             Text(decField.presentInPersistentStore ? decField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -121,8 +151,7 @@ struct RowView: View {
                             
                             Text(dblField.presentInPersistentStore ? dblField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -132,8 +161,7 @@ struct RowView: View {
                             
                             Text(fltField.presentInPersistentStore ? fltField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                         
@@ -141,10 +169,11 @@ struct RowView: View {
                             
                             let dateField : FieldDate = field as! FieldDate
                             
-                            Text(dateField.presentInPersistentStore ? dateField.value.description : "--")
+                
+                        // Text(dateField.presentInPersistentStore ? dateField.value.description : "--")
+                        Text(dateField.presentInPersistentStore ?  viewModel.dateFormatter.string(from: dateField.value) : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -154,8 +183,7 @@ struct RowView: View {
                             
                             Text(dataField.presentInPersistentStore ? dataField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
@@ -166,65 +194,49 @@ struct RowView: View {
                             if boolField.value == true {
                                 Text(boolField.presentInPersistentStore ? "true" : "--")
                                     .lineLimit(1)
-                                    .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                    .scrollId(newScrollID)
+                                    .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                     .allowsHitTesting(false)
                                     .font(.system(size: fontSize))
                             } else {
                                 Text(boolField.presentInPersistentStore ? "false" : "--")
                                     .lineLimit(1)
-                                    .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                    .scrollId(newScrollID)
+                                    .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                     .allowsHitTesting(false)
                                     .font(.system(size: fontSize))
                             }
-                           
-                            
+                                 
                         case .UUIDAttributeType:
                             let uuidField : FieldUUID = field as! FieldUUID
                             
                             Text(uuidField.presentInPersistentStore ? uuidField.value.description : "--")
                                 .lineLimit(1)
-                                .frame(width: widthOracle.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
-                                .scrollId(newScrollID)
+                                .frame(width: viewModel.getColumnWidthForAttributeName(field.attributeName), height: CGFloat(cellHeight), alignment: .center)
                                 .allowsHitTesting(false)
                                 .font(.system(size: fontSize))
                             
                         case .undefinedAttributeType:
-                            let _ = print("Hit unhandled case (undefinedAttributeType) for NSAttributeType in RowView")
+                            let _ = logger.error("Hit unhandled case (undefinedAttributeType) for NSAttributeType in RowView")
                             Text("ERROR")
                         case .transformableAttributeType:
-                            let _ = print("Hit unhandled case (transformableAttributeType) for NSAttributeType in RowView")
+                            let _ = logger.error("Hit unhandled case (transformableAttributeType) for NSAttributeType in RowView")
                             Text("ERROR")
                         case .objectIDAttributeType:
-                            let _ = print("Hit unhandled case (objectIDAttributeType) for NSAttributeType in RowView")
+                            let _ = logger.error("Hit unhandled case (objectIDAttributeType) for NSAttributeType in RowView")
                             Text("ERROR")
                         @unknown default:
-                            let _ = print("Hit unhandled *DEFAULT* case for NSAttributeType in RowView")
+                            let _ = logger.error("Hit unhandled *DEFAULT* case for NSAttributeType in RowView")
                             Text("ERROR")
                     }
                 }
+                
+                Divider().background(Color.black)
+                
             }
-         }
+         }.frame(maxWidth: .infinity)
+        .clipped()
       }
 
 }
-
-
-
-struct RowView_Previews: PreviewProvider, ColumnWidthProctol {
-
-    static var previews: some View {
-        GeometryReader { geometry in
-            RowView(rowIndex:1, content: [FieldString(attributeName:"testAttribute" ,managedObjectIDUrl:URL(string:"http://wwww.google.ca")!,value: "some value")], visiblityAndInteractionDelegate:nil, widthOracle: self as! ColumnWidthProctol)
-        }
-    }
-    
-    func getColumnWidthForAttributeName(_ attributeName:String) -> CGFloat {
-        return defaultCellWidth
-    }
-}
-
 //temp for debug remove me
 extension Color {
     /// Return a random color

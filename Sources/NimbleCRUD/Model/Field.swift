@@ -5,7 +5,6 @@
 //  Created by Braden Ackerman on 2022-04-01.
 //
 
-import Foundation
 import CoreData
 
 protocol Field {
@@ -13,42 +12,16 @@ protocol Field {
     var type: NSAttributeType { get }
     var managedObjectIDUrl: URL {get set}
     var presentInPersistentStore: Bool {get}
-    // Int16 integer16AttributeType = 100
-
-    // Int32 integer32AttributeType = 200
-
-    // Int64 integer64AttributeType = 300
-
-    // NSDecimalNumber decimalAttributeType = 400
-
-    // Double doubleAttributeType = 500
-
-    // Float floatAttributeType = 600
-
-    // String stringAttributeType = 700
-
-    // Bool booleanAttributeType = 800
-
-    // Date dateAttributeType = 900
-
-    // Data binaryDataAttributeType = 1000
-
-    // UUID UUIDAttributeType = 1100
-
-    // URL URIAttributeType = 1200
-
-    // ??? transformableAttributeType = 1800
-
-    // own objectIDAttributeType = 2000
-
 }
 
 struct FieldObjectID: Field {
+        
     public var attributeName: String
     public var managedObjectIDUrl: URL
     public var type = NSAttributeType.objectIDAttributeType
     public var value : AnyObject
     public var presentInPersistentStore: Bool = true
+    
 }
 
 struct FieldURI: Field {
@@ -99,7 +72,7 @@ struct FieldString: Field {
     public var presentInPersistentStore: Bool = true
 }
 
-struct FieldFloat: Field {
+struct FieldFloat: Field{
     public var attributeName: String
     public var managedObjectIDUrl: URL
     public var type = NSAttributeType.floatAttributeType
@@ -107,7 +80,7 @@ struct FieldFloat: Field {
     public var presentInPersistentStore: Bool = true
 }
 
-struct FieldDouble: Field {
+struct FieldDouble: Field{
     public var attributeName: String
     public var managedObjectIDUrl: URL
     public var type = NSAttributeType.doubleAttributeType
@@ -139,7 +112,7 @@ struct FieldInt32: Field {
     public var presentInPersistentStore: Bool = true
 }
 
-struct FieldInt16: Field {
+struct FieldInt16: Field{
     public var attributeName: String
     public var managedObjectIDUrl: URL
     public var type = NSAttributeType.integer16AttributeType

@@ -21,6 +21,7 @@ struct GrossScrollControlOverlayView: View {
     var body: some View {
         
         ZStack {
+            
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -37,30 +38,26 @@ struct GrossScrollControlOverlayView: View {
                     VStack {
                         Spacer()
                         ZStack {
-                             
-                             let horizontalSlider =    Slider(value: Binding(get: {
-                                 horizontalScrollRatio
-                            }, set: { (newVal) in
-                                horizontalScrollRatio = newVal
-                            }))
-                                .accentColor(Color(.orange))
-                                .padding(.leading)
-                                .padding(.trailing)
-                             
-                             
+                            
                              //vertical
                              VSlider(value: Binding(get: {
-                                         verticalScrollRatio
+                                        verticalScrollRatio
                                     }, set: { (newVal) in
                                         verticalScrollRatio = newVal
                                     }))
                                         .rotationEffect(.degrees(180.0), anchor: .center)
                                         .padding(.top)
-                                     //need to set frame due to rotation
                              
                              
                              //horizontal
-                             horizontalSlider
+                            Slider(value: Binding(get: {
+                                horizontalScrollRatio
+                           }, set: { (newVal) in
+                               horizontalScrollRatio = newVal
+                           }))
+                               .accentColor(Color(.orange))
+                               .padding(.leading)
+                               .padding(.trailing)
                         }
                         HStack {
                                 Button(action: {
